@@ -12,8 +12,8 @@ import numpy as np
 #28.3496137,77.3330161
 
 class Point(object):
-	def __str__(self):
-		return '({},{})'.format(self.x,self.y)
+	def val(self):
+		return int(self.x),int(self.y)
 	def __init__(self, x=0, y=0):
 	    self.x = x
 	    self.y = y
@@ -32,18 +32,21 @@ def custom():
     loc = 2
     
 def get_map():
-    global img_path
+    global img_path , map_path
     s1 = e1.get()
     s2 = e2.get()
     url = "https://www.google.com/maps/@"+str(s1)+","+str(s2)+",16.75z"
     webbrowser.open(url,autoraise = True, new=1)
     time.sleep(10)
     img_path = '/home/hangman/Desktop/productathon/map.png'
+    map_path = '/home/hangman/Desktop/productathon/orignal_map.png'
     pyautogui.screenshot(img_path)
     os.system("kill $(ps -x | grep firefox)")
-    orig = cv2.imread(img_path,0)
-    img = orig
-    img = img[100:700,450:1200]
+    orig = cv2.imread(img_path,1)
+    gray = cv2.imread(img_path,0)
+    orig = orig[100:700,450:1200]
+    gray = gray[100:700,450:1200]
+    img = gray
     kernel = np.ones((5,5),np.uint8)
     img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
     kernel = np.ones((1,1),np.uint8)
@@ -55,6 +58,7 @@ def get_map():
     ret,img = cv2.threshold(img,254,255,cv2.THRESH_BINARY)
 #    cv2.imshow("img" , img)
     cv2.imwrite(img_path,img)
+    cv2.imwrite(map_path,orig)
 #    cv2.waitKey(0)
 #    cv2.destroyAllWindows()    
 #    temp.destroy()
@@ -107,7 +111,7 @@ def BFS(s, e):
                     break
 
     path = []
-    path_str = ""
+    list_cord = []
     if found:
         p = e
         while p != s:
@@ -116,16 +120,15 @@ def BFS(s, e):
         path.append(p)
         path.reverse()
         for i in range(len(path)):
-        	path_str += str(path[i])
-        
+            a,b = path[i].val()
+            list_cord.append([a,b])
         for p in path:
             img[p.y][p.x] = [255, 0, 0]
         print("Path Found")
-        f = open("cord.txt" , 'w')
-        f.write(path_str)
-        f.close()
+    
     else:
 	    print("Path Not Found")
+    return list_cord
     
 
 
@@ -157,6 +160,7 @@ def mouse_event(event, pX, pY, flags, param):
 #            break
 loc = 0
 img_path = ''
+map_path = ''
 # create a tkinter window 
 root = tk.Tk()               
 
@@ -229,7 +233,25 @@ if len(img_path)!=0:
     while p < 2:
         cv2.waitKey(1)
     cv2.imshow("Image", img)
-    BFS(start, end)
+    cord_list = BFS(start, end)
     cv2.imshow("Image", img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+if(len(map_path) == 0):
+    map_path = img_path
+print(map_path)
+org = cv2.imread(map_path,1)
+i = 0
+while(i < len(cord_list)):
+    x, y = cord_list[i]
+    org = cv2.circle(org,(x,y), 2, (0,0,255), -1)
+    cv2.imshow('simulation' , org)
+    cv2.waitKey(100)
+    i+=5
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+    
+
+
